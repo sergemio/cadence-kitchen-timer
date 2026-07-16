@@ -341,7 +341,7 @@ body.editing .tile .editBadge{display:block}
 <header>
   <div class="logo"><b>SEZAM<em>·</em>TIMERS</b><span>kitchen</span></div>
   <div class="clock" id="clock"></div>
-  <div id="ver">proto · steps v6</div>
+  <div id="ver">proto · steps v7</div>
   <div class="spacer"></div>
   <button class="hbtn" id="langBtn" title="Langue / Language">FR</button>
   <button class="hbtn" id="editBtn">✎ Edit</button>
@@ -707,7 +707,18 @@ function render(){
   }
   layout(); updateTiles();
 }
-function fillFor(p){ return p<=0.15?'var(--red-fill)': p<=0.35?'var(--amber-fill)':'var(--mint-fill)'; }
+/* Urgency color, interpolated CONTINUOUSLY by remaining fraction p (1→0) instead of
+   snapping between 3 tiers — mint → amber → red drift as the timer counts down.
+   Anchors match the old thresholds (pure amber at p=0.35, pure red at p=0.15) and the
+   CSS fill vars: --mint-fill #5cc79a, --amber-fill #edb24e, --red-fill #ec6a6a. */
+const F_MINT=[92,199,154], F_AMBER=[237,178,78], F_RED=[236,106,106];
+function mixRGB(a,b,t){ return 'rgb('+Math.round(a[0]+(b[0]-a[0])*t)+','+Math.round(a[1]+(b[1]-a[1])*t)+','+Math.round(a[2]+(b[2]-a[2])*t)+')'; }
+function fillFor(p){
+  if(p>=1) return 'rgb(92,199,154)';                       // full time → mint
+  if(p>=0.35) return mixRGB(F_AMBER,F_MINT,(p-0.35)/0.65);  // mint → amber
+  if(p>=0.15) return mixRGB(F_RED,F_AMBER,(p-0.15)/0.20);   // amber → red
+  return 'rgb(236,106,106)';                                // last stretch → red
+}
 function updateTiles(){
   const n=now();
   for(const el of grid.children){
