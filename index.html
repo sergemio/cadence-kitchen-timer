@@ -162,7 +162,7 @@ header .spacer{min-width:0}
 /* running / paused: full-tile CAMEMBERT — the filled wedge = time remaining,
    sweeping clockwise from 12 o'clock; the track is revealed as it depletes. */
 .tile[data-status="running"],.tile[data-status="paused"]{
-  background:conic-gradient(from -90deg, var(--fill,var(--mint-fill)) calc(var(--p,1)*360deg), var(--track) 0);
+  background:conic-gradient(from 0deg, var(--fill,var(--mint-fill)) calc(var(--p,1)*360deg), var(--track) 0);
 }
 .tile[data-status="running"] .time,.tile[data-status="running"] .name{color:var(--text)}
 .tile[data-status="paused"] .inner{animation:pausedBreath 1.8s ease-in-out infinite}
@@ -341,7 +341,7 @@ body.editing .tile .editBadge{display:block}
 <header>
   <div class="logo"><b>SEZAM<em>·</em>TIMERS</b><span>kitchen</span></div>
   <div class="clock" id="clock"></div>
-  <div id="ver">proto · steps v7</div>
+  <div id="ver">proto · steps v8</div>
   <div class="spacer"></div>
   <button class="hbtn" id="langBtn" title="Langue / Language">FR</button>
   <button class="hbtn" id="editBtn">✎ Edit</button>
@@ -418,7 +418,7 @@ const PRESETS=[[0,30],[1,0],[2,0],[3,0],[5,0],[8,0],[10,0],[15,0]];
 const SEED_VERSION='2';   // unchanged → existing installs keep their own timers
 const DEFAULTS=[
   {name:'Fries',            durationSec:240, tone:'Bell',  phrase:'The fries are ready'},
-  {name:'Mozza or elastics',durationSec:135, tone:'Beep',  phrase:'The mozza is ready'},
+  {name:'Mozzarella sticks',durationSec:135, tone:'Beep',  phrase:'The mozzarella sticks are ready'},
   {name:'Manoushe',         durationSec:45,  tone:'Chime', phrase:'The manoushe is ready'},
   {name:'Crispy chicken',   durationSec:360, tone:'Bell',  phrase:'The crispy chicken is ready'},
   {name:'Dough making',     durationSec:720, tone:'Beep',  phrase:'The dough is ready'},
@@ -444,7 +444,7 @@ const I18N={
     ringtoneLabel:'Sonnerie (appuyez pour écouter)', voiceLabel:'Annonce vocale', voicePh:'Les frites sont prêtes',
     cancel:'Annuler', save:'Enregistrer',
     tapStart:'démarrer', tapPause:'appuyer pour pause',
-    paused:'❚❚ en pause · reprendre', tapStop:'appuyer pour arrêter',
+    paused:'❚❚ reprendre', tapStop:'appuyer pour arrêter',
     stepsWord:'étapes',
   },
   en:{
@@ -458,7 +458,7 @@ const I18N={
     ringtoneLabel:'Ringtone (tap to preview)', voiceLabel:'Voice announcement', voicePh:'The fries are ready',
     cancel:'Cancel', save:'Save',
     tapStart:'tap to start', tapPause:'tap to pause',
-    paused:'❚❚ paused · tap to resume', tapStop:'tap to stop',
+    paused:'❚❚ tap to resume', tapStop:'tap to stop',
     stepsWord:'steps',
   },
 };
@@ -1036,6 +1036,16 @@ if(!localStorage.getItem('sezam-steak-demo-v2')){
   saveDefs();
   localStorage.removeItem('sezam-steak-demo-v1');
   localStorage.setItem('sezam-steak-demo-v2','1');
+}
+// One-time, NON-destructive: fix the old default name "Mozza or elastics"
+// (a mishearing of "Mozzarella sticks") on existing installs, without touching
+// anything else the user created.
+if(!localStorage.getItem('sezam-mozza-fix')){
+  let changed=false;
+  timers.forEach(t=>{ if(t.name==='Mozza or elastics'){ t.name='Mozzarella sticks';
+    if(t.phrase==='The mozza is ready') t.phrase='The mozzarella sticks are ready'; changed=true; } });
+  if(changed) saveDefs();
+  localStorage.setItem('sezam-mozza-fix','1');
 }
 applyStatic();
 render();
