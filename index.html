@@ -160,11 +160,35 @@ header .spacer{min-width:0}
 .tile .topg{grid-row:1;align-self:center;display:flex;flex-direction:column;align-items:center;gap:.8cqh;max-width:96cqw}
 .tile .timeWrap{grid-row:2;align-self:center}
 .tile .tctl{grid-row:3;align-self:center;margin-top:0}
+.tile .nameRow{display:flex;align-items:center;justify-content:center;max-width:96cqw;min-width:0}
 .tile .name{
   font-weight:800;letter-spacing:.06em;text-transform:uppercase;
   font-size:14cqh;line-height:1;text-align:center;
-  max-width:96cqw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  min-width:0;max-width:96cqw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
+/* ×N batch button — collapsed to zero width while hidden (box-sizing:border-box
+   floors width at padding, hence padding collapses too). NO transitions here (see
+   the .tctl note): its grow-in is the one-shot dupIn animation on .justOn. */
+.tile .dupBtn{
+  font-family:'Chivo Mono',monospace;font-weight:700;font-size:5.5cqh;line-height:1;
+  color:var(--ember);background:var(--panel);border:0 solid var(--line);border-radius:999px;
+  box-shadow:0 1px 4px rgba(28,33,28,.16);text-shadow:none;cursor:pointer;
+  flex:0 0 auto;white-space:nowrap;overflow:hidden;
+  max-width:0;padding:1.3cqh 0;margin-left:0;opacity:0;transform:scale(.6);
+}
+.tile .dupBtn.show{max-width:22cqw;padding:1.3cqh 2.8cqw;margin-left:2.6cqw;opacity:1;transform:scale(1);border-width:1px}
+.tile .dupBtn:active{background:var(--panel-2)}
+/* One-shot appear animations, applied ONLY to the tile whose state just changed
+   (startTimer adds .justOn, spawnClone adds .spawnIn): the ×N pill grows while
+   the title gently slides aside, the ±10s/✕ controls fade up — and rebuilt
+   tiles elsewhere keep their steady state with zero flicker. */
+@keyframes ctlIn{from{opacity:0;transform:translateY(1.4cqh) scale(.94)}to{opacity:1;transform:none}}
+@keyframes dupIn{from{max-width:0;padding-left:0;padding-right:0;margin-left:0;opacity:0;transform:scale(.6)}}
+.tile.justOn .tctl{animation:ctlIn .3s ease}
+.tile.justOn .dupBtn.show{animation:dupIn .3s ease}
+/* a freshly spawned batch tile eases in instead of popping */
+@keyframes tileIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.tile.spawnIn{animation:tileIn .3s ease}
 .tile .time{
   font-family:'DSEG7 Classic','Chivo Mono',monospace;font-weight:700;
   font-size:22cqh;line-height:1;letter-spacing:.02em;
@@ -213,7 +237,16 @@ header .spacer{min-width:0}
 /* keep the destructive reset well clear of the ±10s so it isn't hit by mistake */
 .tctl button.stop{color:var(--red);margin-left:8cqw;min-width:auto;border-color:rgba(224,49,49,.5);background:rgba(255,241,241,.96)}
 .tctl button.stop:active{background:rgba(224,49,49,.16)}
-.tile[data-status="idle"] .tctl,.tile[data-status="ringing"] .tctl{display:none}
+/* hidden via opacity/visibility, NOT via CSS transitions: every state change goes
+   through a full render() rebuild, so a transition would fire on freshly built
+   tiles whose style got computed before their state attribute landed (= the
+   "all buttons flash on every tap" bug). Intentional appearances are one-shot
+   keyframe animations targeted at the ONE tile that changed (.justOn below).
+   Layout is unchanged either way: the tctl lives in the 1fr bottom row, so the
+   centred time never moves. visibility+pointer-events kill ghost taps. */
+.tile[data-status="idle"] .tctl,.tile[data-status="ringing"] .tctl{
+  opacity:0;transform:translateY(1.4cqh) scale(.94);visibility:hidden;pointer-events:none;
+}
 
 /* edit mode */
 body.editing .tile{animation:wobble 2.6s ease-in-out infinite}
@@ -227,6 +260,14 @@ body.editing .tile:nth-child(3n){animation-delay:-1.4s}
   letter-spacing:.1em;
 }
 body.editing .tile .editBadge{display:block}
+/* ×2 batch clones are inert in edit mode: you edit/reorder the PARENT def only */
+body.editing .tile.cloneTile{animation:none}
+body.editing .tile.cloneTile .editBadge{display:none}
+body.editing .dupBtn{display:none}
+@media (prefers-reduced-motion:reduce){
+  .tile.spawnIn{animation:none}
+  .tile.justOn .tctl,.tile.justOn .dupBtn.show{animation:none}
+}
 .tile.dragging{opacity:.9;z-index:50;transform:scale(1.05);box-shadow:0 18px 44px rgba(28,33,28,.3);transition:none;animation:none}
 .tile.dropTarget .inner{outline:2px dashed var(--amber);outline-offset:-6px}
 
@@ -498,7 +539,7 @@ body.editing .tile .editBadge{display:block}
 <script>
 'use strict';
 /* ================= Data ================= */
-const LS_DEF='sezam-timers-v1', LS_RUN='sezam-timers-run-v1', LS_ZONES='sezam-zones-v1';
+const LS_DEF='sezam-timers-v1', LS_RUN='sezam-timers-run-v1', LS_ZONES='sezam-zones-v1', LS_CLONES='sezam-clones-v1';
 const TONES=['Bell','Beep','Chime','Ping','Buzz','Marimba'];   // available ringtones (assigned per ZONE)
 const ZONE_COLORS=['#e8600f','#3d7f8c','#dd9207','#0fa96a','#2f6f9e','#b0483a'];
 const PRESETS=[[0,30],[1,0],[2,0],[3,0],[5,0],[8,0],[10,0],[15,0]];
@@ -528,6 +569,8 @@ const ZONE_SEED=[
 let timers=[];            // [{id,name,durationSec,zoneId,phrase}] or [{...,steps:[{name,sec}]}] (legacy: tone)
 let zones=[];             // [{id,name,sound,color}] — the alarm SOUND belongs to the zone, not the timer
 let run={};               // {id:{status:'running'|'ringing', endsAt, nextVoiceAt, voiceGap}}
+let clones=[];            // [{id,parentId}] — ×2 batch duplicates: ephemeral, never idle (dissolve on stop)
+let view=[];              // display list built at render(): each parent followed by its clone batches
 let editing=false, editingId=null;
 
 /* ================= i18n (FR default, switchable EN) ================= */
@@ -577,13 +620,18 @@ function load(){
   try{timers=JSON.parse(localStorage.getItem(LS_DEF))||[]}catch(e){timers=[]}
   try{zones=JSON.parse(localStorage.getItem(LS_ZONES))||[]}catch(e){zones=[]}
   try{run=JSON.parse(localStorage.getItem(LS_RUN))||{}}catch(e){run={}}
-  // reconcile stale run entries
+  try{clones=JSON.parse(localStorage.getItem(LS_CLONES))||[]}catch(e){clones=[]}
+  // reconcile stale entries: a clone needs a live parent AND an active run
+  // (a batch clone never exists idle); run ids must match a def or a clone.
   const ids=new Set(timers.map(t=>t.id));
-  for(const id in run){ if(!ids.has(id)) delete run[id]; }
+  clones=clones.filter(c=>ids.has(c.parentId)&&run[c.id]);
+  const valid=new Set([...ids,...clones.map(c=>c.id)]);
+  for(const id in run){ if(!valid.has(id)) delete run[id]; }
 }
 function saveDefs(){localStorage.setItem(LS_DEF,JSON.stringify(timers))}
 function saveRun(){localStorage.setItem(LS_RUN,JSON.stringify(run))}
 function saveZones(){localStorage.setItem(LS_ZONES,JSON.stringify(zones))}
+function saveClones(){localStorage.setItem(LS_CLONES,JSON.stringify(clones))}
 const uid=()=>Math.random().toString(36).slice(2,10);
 // The alarm SOUND is resolved from the timer's ZONE. Legacy timers (with a `tone`
 // and no zone) keep their old sound as a fallback, so nothing changes for them.
@@ -719,13 +767,45 @@ function flashTile(id){
   el.classList.remove('stepFlash'); void el.offsetWidth; el.classList.add('stepFlash');
   setTimeout(()=>{ if(el) el.classList.remove('stepFlash'); },800);
 }
+// One-shot appear animation on the single tile that just changed state — render()
+// rebuilds the whole grid, so transitions can't be used (they'd fire on every
+// rebuilt tile); instead the changed tile alone replays a keyframe animation.
+function animTile(id,cls){
+  const el=grid.querySelector('.tile[data-id="'+id+'"]'); if(!el)return;
+  el.classList.add(cls); setTimeout(()=>el.classList.remove(cls),400);
+}
 function startTimer(t){
   if(isChain(t)) run[t.id]={status:'running',chain:1,stepIndex:0,endsAt:now()+t.steps[0].sec*1000};
   else run[t.id]={status:'running',endsAt:now()+t.durationSec*1000};
   saveRun(); playClick(true); render();
+  animTile(t.id,'justOn');   // fade the controls + grow the ×N pill on THIS tile only
+}
+/* ×2 batches: a second fryer goes down with the same dish → the ×N button on an
+   active tile spawns a CLONE of that timer, starting from zero (a fresh batch).
+   Clones are ephemeral: they live right after their parent in the grid, share its
+   whole definition, and DISSOLVE (instead of going idle) when stopped/reset. */
+const MAX_BATCH=3;   // per dish: 1 original + up to 2 clone batches (keeps the grid readable)
+const batchCount=pid=>1+clones.reduce((a,c)=>a+(c.parentId===pid?1:0),0);
+function spawnClone(pid){
+  const parent=timers.find(x=>x.id===pid); if(!parent)return;
+  if(batchCount(pid)>=MAX_BATCH)return;
+  const c={id:uid(),parentId:pid};
+  clones.push(c); saveClones();
+  startTimer({...parent,id:c.id});           // fresh batch → full duration, running now
+  animTile(c.id,'spawnIn');                  // the new tile eases in (overrides justOn's part-anims)
+}
+function removeClonesOf(pid){   // editing/deleting a def invalidates its running batches
+  const mine=clones.filter(c=>c.parentId===pid);
+  if(!mine.length)return;
+  mine.forEach(c=>{ delete run[c.id]; stopSpeechFor(c.id); });
+  clones=clones.filter(c=>c.parentId!==pid);
+  saveClones(); saveRun();
 }
 function stopTimer(id,click=true){
   delete run[id]; saveRun();
+  // a clone batch never returns to idle — stopping it dissolves it into its parent
+  const ci=clones.findIndex(c=>c.id===id);
+  if(ci>=0){ clones.splice(ci,1); saveClones(); }
   if(click) playClick(false);
   stopSpeechFor(id);   // cancel only THIS timer's voice, not others still ringing
   render();
@@ -769,7 +849,7 @@ function alarmRepeat(t){
 }
 function tick(){
   const n=now();
-  for(const t of timers){
+  for(const t of view){   // display list = parents + clone batches (each has its own run entry)
     const r=run[t.id]; if(!r)continue;
     if(r.status==='running'){
       if(!(n>=r.endsAt)) continue;
@@ -806,7 +886,7 @@ const fmt=s=>{s=Math.max(0,Math.round(s));const m=Math.floor(s/60);return m+':'+
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const m=Math.floor(s/60);return '+'+m+':'+String(s%60).padStart(2,'0')};
 
 function layout(){
-  const N=Math.max(timers.length,1);
+  const N=Math.max(view.length,1);   // count clone batches too — they take grid cells
   const cs=getComputedStyle(gridWrap);
   const padX=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight);
   const padY=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom);
@@ -823,15 +903,27 @@ function layout(){
 }
 new ResizeObserver(layout).observe(gridWrap);
 
+// Materialize the display list: each parent def, then its clone batches (same
+// definition, own id + own run entry). Rebuilt on every render().
+function allTimers(){
+  const out=[];
+  for(const t of timers){
+    out.push(t);
+    for(const c of clones) if(c.parentId===t.id) out.push({...t,id:c.id,parentId:t.id});
+  }
+  return out;
+}
 function render(){
+  view=allTimers();
   empty.hidden=timers.length>0;
   grid.innerHTML='';
-  for(const t of timers){
+  for(const t of view){
     const el=document.createElement('div');
     el.className='tile'; el.dataset.id=t.id;
+    if(t.parentId) el.classList.add('cloneTile');   // batch clone: not editable/draggable
     el.innerHTML=`<div class="phaseBanner"><span class="pc"></span><span class="pn"></span></div><div class="inner">
       <div class="editBadge">✎ EDIT</div>
-      <div class="topg"><div class="name"></div><div class="zoneChip" hidden></div></div>
+      <div class="topg"><div class="nameRow"><div class="name"></div><button type="button" class="dupBtn">×2</button></div><div class="zoneChip" hidden></div></div>
       <div class="timeWrap"><div class="tghost" aria-hidden="true"></div><div class="time"></div></div>
       <div class="tctl">
         <button data-a="plus">+10s</button>
@@ -844,12 +936,15 @@ function render(){
     // what actually changes (time, pie, phase) instead of re-querying/rewriting.
     el._t=t;
     el._r={time:el.querySelector('.time'), ghost:el.querySelector('.tghost'),
-           pc:el.querySelector('.pc'), pn:el.querySelector('.pn')};
+           pc:el.querySelector('.pc'), pn:el.querySelector('.pn'),
+           dup:el.querySelector('.dupBtn')};
     const zc=el.querySelector('.zoneChip'), z=zoneById(t.zoneId);
     if(z){ zc.textContent=z.name; zc.style.background=z.color; zc.hidden=false; }
     grid.appendChild(el);
   }
-  layout(); updateTiles();
+  // Apply state attrs BEFORE layout(): layout's getComputedStyle flushes styles,
+  // and fresh tiles must never be style-computed in a stateless in-between look.
+  updateTiles(); layout();
 }
 /* Urgency color, interpolated CONTINUOUSLY by remaining fraction p (1→0) instead of
    snapping between 3 tiers — mint → amber → red drift as the timer counts down.
@@ -904,6 +999,12 @@ function updateTiles(){
     }
     if(el.dataset.status!==status) el.dataset.status=status;
     if(el.dataset.chain!==chainAttr) el.dataset.chain=chainAttr;
+    // ×N batch button: on any ACTIVE tile of a dish that still has batch room.
+    // Label = the batch the press would create (×2 → ×3); frozen while fading out.
+    const pid=t.parentId||t.id, cnt=batchCount(pid);
+    const showDup = status!=='idle' && cnt<MAX_BATCH;
+    if(R.dup._show!==showDup){ R.dup._show=showDup; R.dup.classList.toggle('show',showDup); }
+    if(showDup) put(R.dup,'×'+(cnt+1));
     put(R.ghost,R.time._v.replace(/[0-9]/g,'8'));
   }
 }
@@ -917,8 +1018,10 @@ let suppressClick=false;   // a finished edit-mode drag must not read as a tap (
 grid.addEventListener('click',e=>{
   if(suppressClick)return;
   const tile=e.target.closest('.tile'); if(!tile)return;
-  const id=tile.dataset.id, t=timers.find(x=>x.id===id); if(!t)return;
-  if(editing){ openModal(t); return; }
+  const t=tile._t; if(!t)return;   // clones aren't in `timers` — the tile carries its own def
+  const id=t.id;
+  if(editing){ if(t.parentId)return; openModal(t); return; }   // clones: inert in edit mode
+  if(e.target.closest('.dupBtn')){ spawnClone(t.parentId||t.id); return; }
   const btn=e.target.closest('button[data-a]');
   if(btn){
     if(btn.dataset.a==='plus')adjustTimer(id,10);
@@ -948,6 +1051,7 @@ let drag=null;
 grid.addEventListener('pointerdown',e=>{
   if(!editing)return;
   const tile=e.target.closest('.tile'); if(!tile)return;
+  if(tile._t&&tile._t.parentId)return;   // clone batches aren't draggable (order belongs to parents)
   drag={tile,id:tile.dataset.id,startX:e.clientX,startY:e.clientY,moved:false};
   tile.setPointerCapture(e.pointerId);
 });
@@ -965,7 +1069,8 @@ grid.addEventListener('pointermove',e=>{
   drag.tile.style.pointerEvents='';
   const target=under && under.closest('.tile');
   grid.querySelectorAll('.dropTarget').forEach(x=>x.classList.remove('dropTarget'));
-  if(target && target!==drag.tile){target.classList.add('dropTarget');drag.over=target.dataset.id}
+  // clones can't be drop targets either — their index means nothing in `timers`
+  if(target && target!==drag.tile && !(target._t&&target._t.parentId)){target.classList.add('dropTarget');drag.over=target.dataset.id}
   else drag.over=null;
 });
 grid.addEventListener('pointerup',e=>{
@@ -1142,6 +1247,7 @@ document.getElementById('mSave').addEventListener('click',()=>{
     if(mMode!=='chain') delete t.steps;   // switching chain → single clears old phases
     delete run[t.id];                      // reset any run state so it matches the new shape
     stopSpeechFor(t.id);                   // if it was ringing, a queued announcement must not speak after the reset
+    removeClonesOf(t.id);                  // batches are tied to the def they were cloned from
     Object.assign(t,patch); delete t.tone; // zones now govern the sound; drop legacy tone
   }else{
     timers.push({id:uid(),...patch});
@@ -1151,6 +1257,7 @@ document.getElementById('mSave').addEventListener('click',()=>{
 mDelete.addEventListener('click',()=>{
   if(!editingId)return;
   stopSpeechFor(editingId);
+  removeClonesOf(editingId);
   timers=timers.filter(t=>t.id!==editingId);
   delete run[editingId];
   saveDefs();saveRun();playClick(false);closeModal();render();
@@ -1244,7 +1351,7 @@ load();
 if(localStorage.getItem('sezam-timers-seed-ver')!==SEED_VERSION){
   timers=DEFAULTS.map(d=>({id:uid(),...d}));
   zones=ZONE_SEED.map(z=>({...z}));                     // stable-id zones, matched by the timers above
-  run={};
+  run={}; clones=[]; saveClones();
   lang='en'; localStorage.setItem('sezam-lang','en');   // hardcoded default set ships in English
   if('speechSynthesis' in window) pickVoice();          // re-pick an English voice for the call-outs
   localStorage.setItem('sezam-timers-seed-ver',SEED_VERSION);
