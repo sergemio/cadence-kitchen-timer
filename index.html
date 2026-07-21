@@ -66,9 +66,9 @@ header{
   background:#191b14; color:#efe8d6;   /* dark header (matches the spec doc); body stays light */
 }
 .logo{display:flex;align-items:center;gap:9px}
-.logo .logo-mark{width:28px;height:28px;flex:none}
+.logo .logo-mark{height:26px;width:auto;flex:none;color:#f5f1e8}   /* portrait « 0 » : hauteur fixe, largeur par l'aspect-ratio → jamais hors header, centré par le flex */
 .logo .wm{display:flex;flex-direction:column;line-height:1;gap:2px}
-.logo b{font-family:'DSEG14 Classic','Big Shoulders Display',sans-serif;font-weight:400;font-size:1.16rem;letter-spacing:.02em;color:#fff;text-transform:none;white-space:nowrap}
+.logo b{font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:1.42rem;letter-spacing:.045em;color:#fff;white-space:nowrap}
 .logo b em{font-style:normal;font-weight:700;font-family:'Big Shoulders Display',sans-serif;font-size:1.32rem;letter-spacing:.01em;color:color-mix(in srgb,#efe8d6 58%,transparent)}
 .logo span{font-family:'Chivo Mono',monospace;font-size:.56rem;color:var(--muted);letter-spacing:.18em;text-transform:uppercase}
 @font-face{font-family:'DSEG7 Classic';font-style:normal;font-weight:bold;src:url(data:font/woff2;base64,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) format('woff2')}
@@ -96,9 +96,8 @@ header .spacer{min-width:0}
   header{gap:8px;padding-left:10px;padding-right:10px}
   .hbtn{padding:9px 12px;font-size:.9rem}
 }
-/* Medium band (tablet portrait): the DSEG14 wordmark is wider than the old font,
-   so drop the "— Kitchen Timer" descriptor before it can collide with the buttons.
-   Below 820px the whole wordmark is already hidden by the rule above. */
+/* Medium band (tablet portrait): drop the "— Kitchen Timer" descriptor before it
+   can collide with the buttons. Below 820px the whole wordmark is already hidden. */
 @media (max-width:960px){
   .logo b em{display:none}
 }
@@ -110,7 +109,8 @@ header .spacer{min-width:0}
 @media (max-width:800px){ #newBtn .lbl, #editBtn .lbl{display:none} }
 @media (max-width:560px){ .clock{display:none} }   /* only then drop the clock */
 @media (max-width:470px){
-  .logo b{font-size:1.12rem;letter-spacing:.03em}
+  .logo b{font-size:1.24rem;letter-spacing:.04em}
+  .logo .logo-mark{height:23px}
   .hbtn{padding:8px 9px;font-size:.8rem;letter-spacing:.04em}
   header{gap:6px}
 }
@@ -225,13 +225,40 @@ header .spacer{min-width:0}
 .tctl{
   display:flex;gap:3cqw;margin-top:1.6cqh;
 }
+/* Touch ergonomics on small/crowded tiles (Serge, 19/07):
+   - FLOORS: sizes are tile-proportional (cqh/cqw) but stop shrinking below a
+     real finger target (~42px high, 13px type) — content scales, targets don't.
+   - RADIUS: capped AND proportional (min(10px,2.6cqh)) — a fixed 13px turned
+     small buttons into hard-to-aim pills; now they stay squarish, softly rounded.
+   - HIT AREA: an invisible ::after extends the tappable zone a few px past the
+     visible button (below). */
 .tctl button{
-  font-family:'Chivo Mono',monospace;font-weight:700;font-size:8cqh;
+  font-family:'Chivo Mono',monospace;font-weight:700;font-size:max(8cqh,13px);
   background:var(--panel);color:var(--text);text-shadow:none;
-  border:1px solid var(--line);border-radius:13px;
-  padding:2.4cqh 4.8cqw;cursor:pointer;min-width:26cqw;
+  border:1px solid var(--line);border-radius:min(10px,2.6cqh);
+  padding:max(2.4cqh,6px) max(4.8cqw,10px);cursor:pointer;min-width:26cqw;min-height:42px;
   box-shadow:0 1px 4px rgba(28,33,28,.16);
   transition:background .12s,transform .12s;
+  position:relative;
+}
+/* Invisible extended hitbox — conservative: generous on the outer/vertical
+   sides, tiny (2px) on sides facing the neighbouring ± button so the midpoint
+   of the gap still splits ownership, and ZERO on the ✕'s inner side (the 8cqw
+   gap isolating the destructive stop is a deliberate safety buffer). */
+.tctl button::after{content:'';position:absolute;top:-7px;bottom:-7px;left:-2px;right:-2px}
+.tctl button:first-child::after{left:-7px}
+.tctl button.stop::after{left:0;right:-7px}
+/* The floors above assume the tile can host them: on NARROW tiles (phone
+   portrait, dense grids) three floored buttons outgrow the row and the ✕ gets
+   clipped at the tile edge. Container-query tiers keep the row inside the tile:
+   full floors → compact floors → pure proportional on tiny tiles. */
+@container (max-width:240px){
+  .tctl{gap:2cqw}
+  .tctl button{font-size:max(8cqh,12px);padding:max(2.4cqh,5px) max(4.8cqw,7px);min-width:auto;min-height:38px}
+  .tctl button.stop{margin-left:4cqw}
+}
+@container (max-width:150px){
+  .tctl button{font-size:8cqh;padding:2.4cqh 4.8cqw;min-height:auto}
 }
 .tctl button:active{background:var(--panel-2);transform:scale(.95)}
 /* keep the destructive reset well clear of the ±10s so it isn't hit by mistake */
@@ -248,18 +275,34 @@ header .spacer{min-width:0}
   opacity:0;transform:translateY(1.4cqh) scale(.94);visibility:hidden;pointer-events:none;
 }
 
-/* edit mode */
-body.editing .tile{animation:wobble 2.6s ease-in-out infinite}
+/* edit mode — iOS-style jiggle: fast + visibly angular so the mode can't be missed
+   (the old 2.6s/0.5deg wobble read as a float, not a shake) */
+body.editing .tile{animation:wobble .32s ease-in-out infinite}
 body.editing .tile{touch-action:none}   /* let pointer-drag own the gesture on touch (no scroll steal) */
-body.editing .tile:nth-child(2n){animation-delay:-.6s}
-body.editing .tile:nth-child(3n){animation-delay:-1.4s}
-@keyframes wobble{0%,100%{transform:rotate(0deg)}25%{transform:rotate(.5deg)}75%{transform:rotate(-.5deg)}}
+body.editing .tile:nth-child(2n){animation-delay:-.11s}
+body.editing .tile:nth-child(3n){animation-delay:-.22s}
+@keyframes wobble{0%,100%{transform:rotate(-1.2deg) translateY(.5px)}50%{transform:rotate(1.2deg) translateY(-.5px)}}
+/* solid amber pill, not a bare text mention: reads as a button/badge at a glance */
 .tile .editBadge{
-  position:absolute;top:1.5cqh;right:2cqw;z-index:3;display:none;
-  font-family:'Chivo Mono',monospace;font-size:5cqh;color:var(--amber);
-  letter-spacing:.1em;
+  position:absolute;top:1.8cqh;right:2cqw;z-index:4;display:none;
+  font-family:'Chivo Mono',monospace;font-weight:700;
+  font-size:max(5cqh,11px);line-height:1;letter-spacing:.08em;
+  color:var(--on-accent);background:var(--amber);
+  border-radius:999px;padding:max(1.5cqh,5px) max(2.4cqw,9px);
+  box-shadow:0 2px 8px rgba(28,33,28,.3);text-shadow:none;
 }
 body.editing .tile .editBadge{display:block}
+/* tiles read "switched off": a cream veil washes name/digits/pie (digits keep
+   ticking beneath, so a running timer still reads as running), grey dashed
+   outline = "editable object". Ringing tiles skip the veil — an alarm must
+   stay unmistakable even mid-edit. Veil z sits under the badge (4), over the
+   time (2). State lives on <body>, so rebuilt tiles inherit it instantly —
+   no per-tile attribute race, no flash. */
+body.editing .tile .inner::after{content:'';position:absolute;inset:0;z-index:3;pointer-events:none;background:rgba(244,239,228,.58)}
+body.editing .tile[data-status="ringing"] .inner::after{display:none}
+body.editing .tile .inner{outline:2px dashed rgba(29,33,30,.3);outline-offset:-6px}
+body.editing .tile .phaseBanner{opacity:.45}
+body.editing .tile.dropTarget .inner{outline-color:var(--amber)}
 /* ×2 batch clones are inert in edit mode: you edit/reorder the PARENT def only */
 body.editing .tile.cloneTile{animation:none}
 body.editing .tile.cloneTile .editBadge{display:none}
@@ -267,6 +310,7 @@ body.editing .dupBtn{display:none}
 @media (prefers-reduced-motion:reduce){
   .tile.spawnIn{animation:none}
   .tile.justOn .tctl,.tile.justOn .dupBtn.show{animation:none}
+  body.editing .tile{animation:none}   /* veil + badge + outline still signal the mode */
 }
 .tile.dragging{opacity:.9;z-index:50;transform:scale(1.05);box-shadow:0 18px 44px rgba(28,33,28,.3);transition:none;animation:none}
 .tile.dropTarget .inner{outline:2px dashed var(--amber);outline-offset:-6px}
@@ -428,13 +472,20 @@ body.editing .dupBtn{display:none}
 
 <header>
   <div class="logo">
-    <svg class="logo-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <rect x="12.8" y="1.4" width="6.4" height="3.2" rx="1.3" fill="currentColor"/>
-      <circle cx="16" cy="19.5" r="11" fill="none" stroke="currentColor" stroke-width="2.4"/>
-      <path d="M16 19.5 V8.5 A11 11 0 0 1 23.78 27.28 Z" fill="#e8600f"/>
-      <circle cx="16" cy="19.5" r="1.9" fill="currentColor"/>
+    <!-- « 0 » 7-segments, V3 provisoire (quart 12h→3h grisé + barre ember) — Serge
+         fournira le fichier définitif. Segments en currentColor, gris = 45 % de l'encre
+         → le même mark tient sur fond sombre comme clair. -->
+    <svg class="logo-mark" viewBox="-2 -2 116 196" aria-hidden="true">
+      <polygon points="2.5,14 14,0 54,0 54,28 14,28" fill="currentColor"/>
+      <polygon points="58,0 98,0 109.5,14 98,28 58,28" fill="currentColor" opacity=".45"/>
+      <polygon points="98,2.5 112,14 112,82 98,93.5 84,82 84,14" fill="currentColor" opacity=".45"/>
+      <polygon points="98,98.5 112,110 112,178 98,189.5 84,178 84,110" fill="currentColor"/>
+      <polygon points="2.5,178 14,164 98,164 109.5,178 98,192 14,192" fill="currentColor"/>
+      <polygon points="14,98.5 28,110 28,178 14,189.5 0,178 0,110" fill="currentColor"/>
+      <polygon points="14,2.5 28,14 28,82 14,93.5 0,82 0,14" fill="currentColor"/>
+      <polygon points="63,25.5 75,35 75,88 63,97.5 51,88 51,35" fill="var(--ember)"/>
     </svg>
-    <span class="wm"><b>Cadence <em>— Kitchen Timer</em></b></span>
+    <span class="wm"><b>CADENCE <em>— Kitchen Timer</em></b></span>
   </div>
   <div class="clock" id="clock"></div>
   <div class="spacer"></div>
