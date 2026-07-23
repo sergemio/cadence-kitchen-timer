@@ -1,7 +1,9 @@
-/* Minimal offline-first service worker for Sezam Kitchen Timers.
+/* Minimal offline-first service worker for the Cadence kitchen timer.
    Caches the app shell so it keeps working if the kitchen wifi drops.
-   Bump CACHE when shipping changes so clients pull the new version. */
-const CACHE = 'sezam-timers-v24';
+   Bump CACHE when shipping changes so clients pull the new version.
+   (Renamed from the sezam-timers-* prefix on v25 — activate() deletes
+   every cache that isn't the current one, so old caches self-clean.) */
+const CACHE = 'cadence-timers-v25';
 const SHELL = [
   './',
   './index.html',

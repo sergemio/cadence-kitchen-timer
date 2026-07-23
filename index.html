@@ -589,15 +589,57 @@ body.editing .dupBtn{display:none}
 
 <script>
 'use strict';
+/* ================= Diagnostics ================= */
+// Rule (spec-flutter-v1 §8, adopted 23/07): no silently-swallowed failure.
+// Bounded ring buffer inspectable via CADENCE_LOG in DevTools; each scope
+// warns on the console only once so hot paths (haptics, ticks) stay quiet.
+const FAIL_LOG=[], _warnedScopes=new Set();
+function logFail(scope,e){
+  FAIL_LOG.push({at:new Date().toISOString(),scope,msg:String((e&&e.message)||e)});
+  if(FAIL_LOG.length>50) FAIL_LOG.shift();
+  if(!_warnedScopes.has(scope)){ _warnedScopes.add(scope); console.warn('[cadence]',scope,e); }
+}
+window.CADENCE_LOG=FAIL_LOG;
+
+/* ================= Storage migration ================= */
+// One-shot, NON-destructive: early prototype keys carried the restaurant's
+// name (sezam-*). The product is independent (Cadence), so storage moved to
+// cadence-* — each old value is copied to its new key once (never overwriting
+// fresher data), then the old key is removed. Existing tablets keep their
+// full config: timers, zones, running state, batches, language, volume.
+(function migrateStorage(){
+  const MAP={
+    'sezam-timers-v1':'cadence-timers-v1',
+    'sezam-timers-run-v1':'cadence-run-v1',
+    'sezam-zones-v1':'cadence-zones-v1',
+    'sezam-clones-v1':'cadence-clones-v1',
+    'sezam-lang':'cadence-lang',
+    'sezam-vol':'cadence-vol',
+    'sezam-timers-seed-ver':'cadence-seed-ver',
+    'sezam-steak-demo-v2':'cadence-steak-demo-v2',
+    'sezam-mozza-fix':'cadence-mozza-fix',
+  };
+  try{
+    for(const oldKey in MAP){
+      const v=localStorage.getItem(oldKey);
+      if(v===null) continue;
+      if(localStorage.getItem(MAP[oldKey])===null) localStorage.setItem(MAP[oldKey],v);
+      localStorage.removeItem(oldKey);
+    }
+    localStorage.removeItem('sezam-steak-demo-v1');   // legacy marker, long superseded
+  }catch(e){ logFail('storage-migration',e); }
+})();
+
 /* ================= Data ================= */
-const LS_DEF='sezam-timers-v1', LS_RUN='sezam-timers-run-v1', LS_ZONES='sezam-zones-v1', LS_CLONES='sezam-clones-v1';
+const LS_DEF='cadence-timers-v1', LS_RUN='cadence-run-v1', LS_ZONES='cadence-zones-v1', LS_CLONES='cadence-clones-v1';
 const TONES=['Bell','Beep','Chime','Ping','Buzz','Marimba'];   // available ringtones (assigned per ZONE)
 const ZONE_COLORS=['#e8600f','#3d7f8c','#dd9207','#0fa96a','#2f6f9e','#b0483a'];
 const PRESETS=[[0,30],[1,0],[2,0],[3,0],[5,0],[8,0],[10,0],[15,0]];
-// Default timer set. Bumping SEED_VERSION re-applies this list on next load
-// (this REPLACES the current timers — including any added by hand).
-const SEED_VERSION='4';   // bumped → re-applies the DEFAULTS + zones below once (replaces existing)
-// Real Sezam&Co timers, hardcoded in Serge's order, each pre-assigned to its zone.
+// Default timer set. Seeds a FRESH device in full; on an existing install a
+// SEED_VERSION bump only TOPS UP what's missing (new default timers/zones —
+// see Boot). It NEVER replaces or removes anything the user configured.
+const SEED_VERSION='4';   // bump → one-shot non-destructive top-up on existing installs
+// The pilot kitchen's real timers, in service order, each pre-assigned to its zone.
 // Ships in ENGLISH (default language + English call-outs). Switching to FR = user rewrites phrases.
 const DEFAULTS=[
   {name:'Manouche',         durationSec:45,  zoneId:'four',      phrase:'The manouche is ready'},
@@ -605,7 +647,7 @@ const DEFAULTS=[
   {name:'Fries',            durationSec:260, zoneId:'fritteuse', phrase:'The fries are ready'},
   {name:'Crispy',           durationSec:375, zoneId:'fritteuse', phrase:'The crispy is ready'},
   {name:'Melt cheese',      durationSec:210, zoneId:'four',      phrase:'The melt cheese is ready'},
-  {name:'Dough',            durationSec:720, zoneId:'hello',     phrase:'The dough is ready'},
+  {name:'Dough',            durationSec:720, zoneId:'four',      phrase:'The dough is ready'},
   {name:'Cook chicken',     zoneId:'four',   phrase:'The chicken is ready',
     steps:[{name:'Cook',sec:360},{name:'Flip',sec:90},{name:'Cook',sec:360}]},   // 6:00 + 1:30 + 6:00 = 13:30
 ];
@@ -615,7 +657,6 @@ const ZONE_SEED=[
   {id:'chaud',     name:'Chaud',     sound:'Bell',  color:'#e8600f'},
   {id:'four',      name:'Four',      sound:'Chime', color:'#dd9207'},
   {id:'fritteuse', name:'Fritteuse', sound:'Beep',  color:'#0fa96a'},
-  {id:'hello',     name:'Hello',     sound:'Ping',  color:'#3d7f8c'},
 ];
 let timers=[];            // [{id,name,durationSec,zoneId,phrase}] or [{...,steps:[{name,sec}]}] (legacy: tone)
 let zones=[];             // [{id,name,sound,color}] — the alarm SOUND belongs to the zone, not the timer
@@ -625,7 +666,7 @@ let view=[];              // display list built at render(): each parent followe
 let editing=false, editingId=null;
 
 /* ================= i18n (FR default, switchable EN) ================= */
-let lang = localStorage.getItem('sezam-lang') || 'en';
+let lang = localStorage.getItem('cadence-lang') || 'en';
 const TONE_LABELS={ fr:{Bell:'Cloche',Beep:'Bip',Chime:'Carillon',Ping:'Ping',Buzz:'Buzzer',Marimba:'Marimba'}, en:{Bell:'Bell',Beep:'Beep',Chime:'Chime',Ping:'Ping',Buzz:'Buzzer',Marimba:'Marimba'} };
 const I18N={
   fr:{
@@ -668,10 +709,10 @@ const tr=k=>I18N[lang][k];   // NB: not named `t` — that's the timer var in lo
 const readyPhrase=name=> lang==='fr' ? `${name} est prêt` : `The ${name.toLowerCase()} is ready`;
 
 function load(){
-  try{timers=JSON.parse(localStorage.getItem(LS_DEF))||[]}catch(e){timers=[]}
-  try{zones=JSON.parse(localStorage.getItem(LS_ZONES))||[]}catch(e){zones=[]}
-  try{run=JSON.parse(localStorage.getItem(LS_RUN))||{}}catch(e){run={}}
-  try{clones=JSON.parse(localStorage.getItem(LS_CLONES))||[]}catch(e){clones=[]}
+  try{timers=JSON.parse(localStorage.getItem(LS_DEF))||[]}catch(e){timers=[];logFail('load-timers',e)}
+  try{zones=JSON.parse(localStorage.getItem(LS_ZONES))||[]}catch(e){zones=[];logFail('load-zones',e)}
+  try{run=JSON.parse(localStorage.getItem(LS_RUN))||{}}catch(e){run={};logFail('load-run',e)}
+  try{clones=JSON.parse(localStorage.getItem(LS_CLONES))||[]}catch(e){clones=[];logFail('load-clones',e)}
   // reconcile stale entries: a clone needs a live parent AND an active run
   // (a batch clone never exists idle); run ids must match a def or a clone.
   const ids=new Set(timers.map(t=>t.id));
@@ -695,7 +736,7 @@ let AC=null, speechReady=false;
    only scale OUR audio (tones + voice) — a browser cannot touch the DEVICE
    volume; the Flutter build binds the same slider to the system ALARM stream
    instead (see timer-app/spec-flutter-v1.md). */
-let vol=(()=>{ const v=parseFloat(localStorage.getItem('sezam-vol')); return isNaN(v)?1:Math.min(1,Math.max(0,v)); })();
+let vol=(()=>{ const v=parseFloat(localStorage.getItem('cadence-vol')); return isNaN(v)?1:Math.min(1,Math.max(0,v)); })();
 function applyVol(){ if(AC&&AC._master) AC._master.gain.value=vol; }
 function ac(){ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended') AC.resume(); return AC; }
 function unlockAudio(){
@@ -733,11 +774,11 @@ function tone(freq,t0,dur,type='sine',peak=.5){
 // (and it is not guaranteed on older iOS).
 const hapticLabel=document.getElementById('hapticLabel');
 function haptic(pattern){
-  try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(e){}
-  try{ if(hapticLabel) hapticLabel.click(); }catch(e){}
+  try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(e){logFail('haptics-vibrate',e)}
+  try{ if(hapticLabel) hapticLabel.click(); }catch(e){logFail('haptics-ios',e)}
 }
 function playClick(up=true){
-  try{ const t=ac().currentTime; tone(up?1250:820,t,0.06,'square',.12); }catch(e){} // .12 → ~same click level after the global TONE_BOOST
+  try{ const t=ac().currentTime; tone(up?1250:820,t,0.06,'square',.12); }catch(e){logFail('audio-click',e)} // .12 → ~same click level after the global TONE_BOOST
   haptic(30);
 }
 function playRingtone(name){
@@ -749,7 +790,7 @@ function playRingtone(name){
     else if(name==='Buzz'){ [0,.2,.4].forEach(d=>tone(185,t+d,0.16,'sawtooth',.34)); }                              // low, harsh buzzer
     else if(name==='Marimba'){ [[440,0],[554.37,.13],[659.25,.26]].forEach(([f,d])=>tone(f,t+d,0.34,'triangle',.5)); } // woody, warm
     else { /* Bell */ tone(880,t,0.9,'sine',.55); tone(1760,t,0.5,'sine',.2); tone(880,t+.55,0.9,'sine',.45); tone(1760,t+.55,0.5,'sine',.15); } // resonant double
-  }catch(e){}
+  }catch(e){logFail('audio-ringtone',e)}
 }
 let enVoice=null;
 // Web Speech API exposes no gender field → infer a FEMALE English voice by name.
@@ -788,7 +829,7 @@ function drainSpeech(){
     u.lang = lang==='fr'?'fr-FR':'en-US'; if(enVoice)u.voice=enVoice; u.rate=1; u.volume=vol;
     u.onend=done; u.onerror=done;
     speechSynthesis.speak(u);
-  }catch(e){ done(); }
+  }catch(e){ logFail('speech-speak',e); done(); }
 }
 function enqueueSpeech(id,text){
   if(!('speechSynthesis' in window)) return;
@@ -799,7 +840,7 @@ function stopSpeechFor(id){
   speechQueue=speechQueue.filter(x=>x.id!==id);
   if(currentSpeechId===id){
     speechGen++;                          // invalidate the in-flight utterance's onend
-    try{speechSynthesis.cancel()}catch(e){}
+    try{speechSynthesis.cancel()}catch(e){logFail('speech-cancel',e)}
     speaking=false; currentSpeechId=null;
     setTimeout(drainSpeech,60);           // let another timer's queued voice continue
   }
@@ -811,7 +852,7 @@ const now=()=>Date.now();
 const isChain=t=>Array.isArray(t.steps)&&t.steps.length>=2;
 const totalSec=t=>isChain(t)?t.steps.reduce((a,s)=>a+(s.sec||0),0):t.durationSec;
 function stepChime(){ // short rising two-note played at each phase transition
-  try{ const c=ac().currentTime; tone(659.25,c,0.16,'sine',.42); tone(987.77,c+0.14,0.22,'sine',.42); }catch(e){}
+  try{ const c=ac().currentTime; tone(659.25,c,0.16,'sine',.42); tone(987.77,c+0.14,0.22,'sine',.42); }catch(e){logFail('audio-chime',e)}
 }
 function flashTile(id){
   const el=document.querySelector('.tile[data-id="'+id+'"]'); if(!el)return;
@@ -1352,7 +1393,7 @@ document.getElementById('zAdd').addEventListener('click',()=>{
 /* ================= Wake lock & clock ================= */
 let wl=null;
 async function wakeLock(){
-  try{ if('wakeLock' in navigator) wl=await navigator.wakeLock.request('screen'); }catch(e){}
+  try{ if('wakeLock' in navigator) wl=await navigator.wakeLock.request('screen'); }catch(e){logFail('wake-lock',e)}
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')wakeLock()});
 wakeLock();
@@ -1383,11 +1424,11 @@ function applyStatic(){
 [...langRow.children].forEach(b=>b.addEventListener('click',()=>{
   if(b.dataset.lang===lang) return;
   lang=b.dataset.lang;
-  localStorage.setItem('sezam-lang',lang);
+  localStorage.setItem('cadence-lang',lang);
   pickVoice(); applyStatic(); render(); playClick(true);
   if(overlay.classList.contains('open')) mTitle.textContent = editingId?tr('editTimer'):tr('newTimer');
 }));
-volSlider.addEventListener('input',()=>{ vol=volSlider.value/100; localStorage.setItem('sezam-vol',String(vol)); applyVol(); });
+volSlider.addEventListener('input',()=>{ vol=volSlider.value/100; localStorage.setItem('cadence-vol',String(vol)); applyVol(); });
 volSlider.addEventListener('change',()=>playClick(true));   // audible preview of the chosen level on release
 settingsBtn.addEventListener('click',()=>{ syncLang(); volSlider.value=Math.round(vol*100); settingsOverlay.classList.add('open'); playClick(true); });
 document.getElementById('sClose').addEventListener('click',()=>settingsOverlay.classList.remove('open'));
@@ -1395,25 +1436,34 @@ settingsOverlay.addEventListener('click',e=>{ if(e.target===settingsOverlay) set
 
 /* ================= Boot ================= */
 load();
-// Ship the app with the default timer set. Applied on a fresh device, or once
-// whenever SEED_VERSION changes. After that, edits/additions persist in
-// localStorage across refreshes (a refresh does NOT wipe your changes or a
-// running timer). Real cross-device sync will come with the database later.
-if(localStorage.getItem('sezam-timers-seed-ver')!==SEED_VERSION){
+// Seed. FRESH device (nothing stored) → full default set. Existing install
+// with a NEW SEED_VERSION → non-destructive top-up ONLY: add missing default
+// zones (matched by stable id) and missing default timers (matched by name).
+// It NEVER touches existing timers, running state, batches or the chosen
+// language — a version bump must not erase user configuration
+// (rule adopted 2026-07-23 from the v2 review; spec-flutter-v1 §8).
+// Real cross-device sync will come with the database later.
+if(localStorage.getItem(LS_DEF)===null){
   timers=DEFAULTS.map(d=>({id:uid(),...d}));
   zones=ZONE_SEED.map(z=>({...z}));                     // stable-id zones, matched by the timers above
   run={}; clones=[]; saveClones();
-  lang='en'; localStorage.setItem('sezam-lang','en');   // hardcoded default set ships in English
+  lang='en'; localStorage.setItem('cadence-lang','en'); // hardcoded default set ships in English
   if('speechSynthesis' in window) pickVoice();          // re-pick an English voice for the call-outs
-  localStorage.setItem('sezam-timers-seed-ver',SEED_VERSION);
+  localStorage.setItem('cadence-seed-ver',SEED_VERSION);
   saveDefs(); saveZones(); saveRun();
+}else if(localStorage.getItem('cadence-seed-ver')!==SEED_VERSION){
+  ZONE_SEED.forEach(z=>{ if(!zones.some(x=>x.id===z.id)) zones.push({...z}); });
+  const seededNames=new Set(timers.map(t=>t.name));
+  DEFAULTS.forEach(d=>{ if(!seededNames.has(d.name)) timers.push({id:uid(),...d}); });
+  localStorage.setItem('cadence-seed-ver',SEED_VERSION);
+  saveDefs(); saveZones();
 }
-// Fallback: make sure zones exist even if timers weren't reseeded this load.
+// Fallback: make sure zones exist even if nothing was seeded this load.
 if(!localStorage.getItem(LS_ZONES)){ zones=ZONE_SEED.map(z=>({...z})); saveZones(); }
 // One-time, NON-destructive: surface the chained "Steak" demo on existing installs
 // (which kept their own timers above) so the multi-step feature is visible without
 // wiping anything. Skips if a chained timer already exists.
-if(!localStorage.getItem('sezam-steak-demo-v2')){
+if(!localStorage.getItem('cadence-steak-demo-v2')){
   // Replace the earlier English-only demo (untouched auto-seed, matched by name)
   // with a localized one so the spoken cues match the app language.
   timers = timers.filter(t=> !(Array.isArray(t.steps) && t.name==='Steak · med-rare'));
@@ -1426,18 +1476,17 @@ if(!localStorage.getItem('sezam-steak-demo-v2')){
     timers.unshift({id:uid(),tone:'Bell',...demo});
   }
   saveDefs();
-  localStorage.removeItem('sezam-steak-demo-v1');
-  localStorage.setItem('sezam-steak-demo-v2','1');
+  localStorage.setItem('cadence-steak-demo-v2','1');
 }
 // One-time, NON-destructive: fix the old default name "Mozza or elastics"
 // (a mishearing of "Mozzarella sticks") on existing installs, without touching
 // anything else the user created.
-if(!localStorage.getItem('sezam-mozza-fix')){
+if(!localStorage.getItem('cadence-mozza-fix')){
   let changed=false;
   timers.forEach(t=>{ if(t.name==='Mozza or elastics'){ t.name='Mozzarella sticks';
     if(t.phrase==='The mozza is ready') t.phrase='The mozzarella sticks are ready'; changed=true; } });
   if(changed) saveDefs();
-  localStorage.setItem('sezam-mozza-fix','1');
+  localStorage.setItem('cadence-mozza-fix','1');
 }
 applyStatic();
 render();
@@ -1445,7 +1494,7 @@ render();
 /* Register the service worker (offline shell + installability). Relative path
    keeps the scope correct under the GitHub Pages sub-directory. */
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(e=>logFail('sw-register',e)); });
 }
 </script>
 </body>
