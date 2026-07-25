@@ -30,6 +30,11 @@
   --mint:#0fa96a;
   --red:#e03131;
   --track:#e7ded0;        /* revealed/elapsed area under the camembert */
+  /* Alignés sur l'app Flutter v0.4.9 (choix Serge 25/07/2026) : la carte au
+     repos est beige, pas blanche, et c'est le filet qui la délimite — l'ombre
+     portée a disparu. Même valeur que --track, volontairement. */
+  --tile-idle:#e7ded0;
+  --tile-edge:rgba(28,33,28,.10);
   --mint-fill:#5cc79a;    /* pie fill, by urgency */
   --amber-fill:#edb24e;
   --red-fill:#ec6a6a;
@@ -78,7 +83,7 @@ header .spacer{flex:1}
 .hbtn{
   font-family:'Big Shoulders Display',sans-serif;font-weight:700;font-size:1rem;
   letter-spacing:.1em;text-transform:uppercase;
-  background:var(--panel);color:var(--text);
+  background:var(--panel-2);color:var(--text);
   border:1px solid var(--line);border-radius:12px;
   padding:10px 18px;cursor:pointer;transition:all .15s;
 }
@@ -120,10 +125,12 @@ header .spacer{min-width:0}
 @media (prefers-reduced-motion:reduce){ .clock .cln{animation:none;opacity:1} }
 
 /* ---------- Grid ---------- */
-#gridWrap{flex:1;position:relative;z-index:1;padding:12px;overflow:hidden;
-  padding-left:max(12px, env(safe-area-inset-left));
-  padding-right:max(12px, env(safe-area-inset-right));
-  padding-bottom:max(12px, env(safe-area-inset-bottom));
+/* --pad est posé par layout() : la marge suit la largeur des cartes. Les max()
+   gardent l'encoche de l'iPhone prioritaire sur le calcul. */
+#gridWrap{flex:1;position:relative;z-index:1;padding:var(--pad,12px);overflow:hidden;
+  padding-left:max(var(--pad,12px), env(safe-area-inset-left));
+  padding-right:max(var(--pad,12px), env(safe-area-inset-right));
+  padding-bottom:max(var(--pad,12px), env(safe-area-inset-bottom));
 }
 #grid{
   display:grid;gap:12px;height:100%;
@@ -141,8 +148,10 @@ header .spacer{min-width:0}
 /* ---------- Tile ---------- */
 .tile{
   position:relative;border-radius:var(--tile-r);
-  background:var(--panel);
-  box-shadow:0 2px 10px rgba(28,33,28,.08);
+  background:var(--tile-idle);
+  /* outline plutôt qu'un inset box-shadow : il passe AU-DESSUS du camembert
+     (enfant en position absolue) et ne décale rien. */
+  outline:1.5px solid var(--tile-edge);outline-offset:-1.5px;
   cursor:pointer;overflow:hidden;
   transition:transform .15s;
   container-type:size;
@@ -171,7 +180,7 @@ header .spacer{min-width:0}
    the .tctl note): its grow-in is the one-shot dupIn animation on .justOn. */
 .tile .dupBtn{
   font-family:'Chivo Mono',monospace;font-weight:700;font-size:5.5cqh;line-height:1;
-  color:var(--ember);background:var(--panel);border:0 solid var(--line);border-radius:999px;
+  color:var(--ember);background:var(--panel-2);border:0 solid var(--line);border-radius:999px;
   box-shadow:0 1px 4px rgba(28,33,28,.16);text-shadow:none;cursor:pointer;
   flex:0 0 auto;white-space:nowrap;overflow:hidden;
   max-width:0;padding:1.3cqh 0;margin-left:0;opacity:0;transform:scale(.6);
@@ -197,7 +206,7 @@ header .spacer{min-width:0}
 .tile .timeWrap{position:relative;display:flex;align-items:center;justify-content:center}
 .tile .tghost{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'DSEG7 Classic',monospace;font-weight:700;font-size:22cqh;line-height:1;letter-spacing:.02em;font-variant-numeric:tabular-nums;color:rgba(0,0,0,.035);z-index:1;pointer-events:none;text-shadow:none}
 /* idle: flat neutral panel (so a running/cooking tile stands out at a glance) */
-.tile[data-status="idle"]{background:var(--panel)}
+.tile[data-status="idle"]{background:var(--tile-idle)}
 .tile[data-status="idle"] .inner{text-shadow:none}
 .tile[data-status="idle"] .time{color:var(--muted)}
 .tile[data-status="idle"] .name{color:var(--text)}
@@ -234,7 +243,7 @@ header .spacer{min-width:0}
      visible button (below). */
 .tctl button{
   font-family:'Chivo Mono',monospace;font-weight:700;font-size:max(8cqh,13px);
-  background:var(--panel);color:var(--text);text-shadow:none;
+  background:var(--panel-2);color:var(--text);text-shadow:none;
   border:1px solid var(--line);border-radius:min(10px,2.6cqh);
   padding:max(2.4cqh,6px) max(4.8cqw,10px);cursor:pointer;min-width:26cqw;min-height:42px;
   box-shadow:0 1px 4px rgba(28,33,28,.16);
@@ -977,20 +986,29 @@ const grid=document.getElementById('grid'), gridWrap=document.getElementById('gr
 const fmt=s=>{s=Math.max(0,Math.round(s));const m=Math.floor(s/60);return m+':'+String(s%60).padStart(2,'0')};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const m=Math.floor(s/60);return '+'+m+':'+String(s%60).padStart(2,'0')};
 
+// Écart et marge en FRACTION de la largeur d'une carte (app Flutter v0.4.9),
+// et non en pixels fixes : le plateau garde le même rapport quel que soit le
+// nombre de minuteurs. À taille de carte comparable (5 %), on préfère une
+// grille pleine — sinon 9 minuteurs passent d'un carré 3×3 à un bancal 4+4+1.
+const GAP_R=0.035, MARGIN_R=0.045, FULL_GRID_TOL=0.05;
+
 function layout(){
   const N=Math.max(view.length,1);   // count clone batches too — they take grid cells
-  const cs=getComputedStyle(gridWrap);
-  const padX=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight);
-  const padY=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom);
-  const W=gridWrap.clientWidth-padX, H=gridWrap.clientHeight-padY, GAP=12;
-  let best={cols:1,size:0,th:0};
+  const W=gridWrap.clientWidth, H=gridWrap.clientHeight;
+  const cand=[];
   for(let c=1;c<=N;c++){
     const rows=Math.ceil(N/c);
-    const tw=(W-(c-1)*GAP)/c, th=(H-(rows-1)*GAP)/rows;
-    const size=Math.min(tw,th*1.25); // allow slightly wide tiles
-    if(size>best.size) best={cols:c,size,th:Math.min(th,tw*0.85)};
+    // résout W = c·tw + (c−1)·GAP_R·tw + 2·MARGIN_R·tw
+    const tw=W/(c+GAP_R*(c-1)+2*MARGIN_R), gap=GAP_R*tw, pad=MARGIN_R*tw;
+    const th=(H-2*pad-(rows-1)*gap)/rows;
+    cand.push({cols:c,size:Math.min(tw,th*1.25),th:Math.min(th,tw*0.85),tw,gap,pad,holes:rows*c-N});
   }
-  grid.style.gridTemplateColumns=`repeat(${best.cols}, minmax(0,${Math.floor((W-(best.cols-1)*GAP)/best.cols)}px))`;
+  const bestSize=Math.max(...cand.map(x=>x.size));
+  const best=cand.filter(x=>x.size>=bestSize*(1-FULL_GRID_TOL))
+                 .sort((a,b)=>a.holes-b.holes||a.cols-b.cols)[0]||cand[0];
+  gridWrap.style.setProperty('--pad',Math.floor(best.pad)+'px');
+  grid.style.gap=Math.floor(best.gap)+'px';
+  grid.style.gridTemplateColumns=`repeat(${best.cols}, minmax(0,${Math.floor(best.tw)}px))`;
   grid.style.gridAutoRows=Math.floor(best.th)+'px';
 }
 new ResizeObserver(layout).observe(gridWrap);
