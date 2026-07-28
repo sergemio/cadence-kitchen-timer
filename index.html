@@ -175,12 +175,12 @@ header .spacer{min-width:0}
   font-size:14cqh;line-height:1;text-align:center;
   min-width:0;max-width:96cqw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-/* ×N batch button — collapsed to zero width while hidden (box-sizing:border-box
+/* #N batch button — collapsed to zero width while hidden (box-sizing:border-box
    floors width at padding, hence padding collapses too). NO transitions here (see
    the .tctl note): its grow-in is the one-shot dupIn animation on .justOn. */
 .tile .dupBtn{
   font-family:'Chivo Mono',monospace;font-weight:700;font-size:5.5cqh;line-height:1;
-  color:var(--ember);background:var(--panel-2);border:0 solid var(--line);border-radius:999px;
+  color:var(--text);background:var(--panel-2);border:0 solid var(--line);border-radius:999px;
   box-shadow:0 1px 4px rgba(28,33,28,.16);text-shadow:none;cursor:pointer;
   flex:0 0 auto;white-space:nowrap;overflow:hidden;
   max-width:0;padding:1.3cqh 0;margin-left:0;opacity:0;transform:scale(.6);
@@ -188,7 +188,7 @@ header .spacer{min-width:0}
 .tile .dupBtn.show{max-width:22cqw;padding:1.3cqh 2.8cqw;margin-left:2.6cqw;opacity:1;transform:scale(1);border-width:1px}
 .tile .dupBtn:active{background:var(--panel-2)}
 /* One-shot appear animations, applied ONLY to the tile whose state just changed
-   (startTimer adds .justOn, spawnClone adds .spawnIn): the ×N pill grows while
+   (startTimer adds .justOn, spawnClone adds .spawnIn): the #N pill grows while
    the title gently slides aside, the ±10s/✕ controls fade up — and rebuilt
    tiles elsewhere keep their steady state with zero flicker. */
 @keyframes ctlIn{from{opacity:0;transform:translateY(1.4cqh) scale(.94)}to{opacity:1;transform:none}}
@@ -241,8 +241,15 @@ header .spacer{min-width:0}
      small buttons into hard-to-aim pills; now they stay squarish, softly rounded.
    - HIT AREA: an invisible ::after extends the tappable zone a few px past the
      visible button (below). */
+/* Les deux boutons de reglage sont des COMMANDES DE TEMPS : ils portent les
+   chiffres de l'afficheur. DSEG7 n'a pas de glyphe '+' et son 's' est dessine
+   comme un '5' -> signe dans la police de titre, chiffres en DSEG7, unite
+   retiree. align-items:baseline aligne les glyphes ENTRE EUX ; le centrage de
+   la paire dans le bouton reste l'affaire du padding (deux problemes distincts,
+   leçon de l'app Flutter). */
 .tctl button{
   font-family:'Chivo Mono',monospace;font-weight:700;font-size:max(8cqh,13px);
+  display:inline-flex;align-items:baseline;justify-content:center;gap:.02em;
   background:var(--panel-2);color:var(--text);text-shadow:none;
   border:1px solid var(--line);border-radius:min(10px,2.6cqh);
   padding:max(2.4cqh,6px) max(4.8cqw,10px);cursor:pointer;min-width:26cqw;min-height:42px;
@@ -254,6 +261,8 @@ header .spacer{min-width:0}
    sides, tiny (2px) on sides facing the neighbouring ± button so the midpoint
    of the gap still splits ownership, and ZERO on the ✕'s inner side (the 8cqw
    gap isolating the destructive stop is a deliberate safety buffer). */
+.tctl button .sg{font-family:'Big Shoulders Display',sans-serif;font-size:1.33em;line-height:1}
+.tctl button .dg{font-family:'DSEG7 Classic','Chivo Mono',monospace;letter-spacing:.02em;font-variant-numeric:tabular-nums}
 .tctl button::after{content:'';position:absolute;top:-7px;bottom:-7px;left:-2px;right:-2px}
 .tctl button:first-child::after{left:-7px}
 .tctl button.stop::after{left:0;right:-7px}
@@ -312,7 +321,7 @@ body.editing .tile[data-status="ringing"] .inner::after{display:none}
 body.editing .tile .inner{outline:2px dashed rgba(29,33,30,.3);outline-offset:-6px}
 body.editing .tile .phaseBanner{opacity:.45}
 body.editing .tile.dropTarget .inner{outline-color:var(--amber)}
-/* ×2 batch clones are inert in edit mode: you edit/reorder the PARENT def only */
+/* #2 batch clones are inert in edit mode: you edit/reorder the PARENT def only */
 body.editing .tile.cloneTile{animation:none}
 body.editing .tile.cloneTile .editBadge{display:none}
 body.editing .dupBtn{display:none}
@@ -411,12 +420,12 @@ body.editing .dupBtn{display:none}
 .stepRow .stepDel{background:none;border:none;color:var(--red);font-size:1.05rem;cursor:pointer;padding:6px;flex:0 0 auto}
 .stepRow .stepDel:disabled{color:var(--line);cursor:default}
 
-/* ---------- Zones + Settings (shared overlay/modal skin) ---------- */
-#zonesOverlay,#settingsOverlay{position:fixed;inset:0;z-index:60;background:rgba(20,22,15,.55);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:20px}
-#zonesOverlay.open,#settingsOverlay.open{display:flex}
-#zonesModal,#settingsModal{width:min(560px,100%);max-height:92vh;overflow-y:auto;background:var(--panel-2);border:1px solid var(--line);border-radius:20px;padding:26px 26px 22px;box-shadow:0 24px 60px rgba(28,33,28,.25)}
-#zonesModal h2,#settingsModal h2{font-weight:800;font-size:1.6rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:10px}
-#zonesModal h2::before,#settingsModal h2::before{content:'';width:10px;height:26px;background:var(--ember);border-radius:3px}
+/* ---------- Settings (overlay/modal skin) ---------- */
+#settingsOverlay{position:fixed;inset:0;z-index:60;background:rgba(20,22,15,.55);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:20px}
+#settingsOverlay.open{display:flex}
+#settingsModal{width:min(560px,100%);max-height:92vh;overflow-y:auto;background:var(--panel-2);border:1px solid var(--line);border-radius:20px;padding:26px 26px 22px;box-shadow:0 24px 60px rgba(28,33,28,.25)}
+#settingsModal h2{font-weight:800;font-size:1.6rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+#settingsModal h2::before{content:'';width:10px;height:26px;background:var(--ember);border-radius:3px}
 #settingsBtn{font-size:1.15rem;line-height:1}
 #settingsModal h2{margin-bottom:22px}
 /* Bigger, more legible section titles than the tiny .field labels used elsewhere. */
@@ -429,22 +438,8 @@ body.editing .dupBtn{display:none}
 #volSlider{width:100%;accent-color:var(--ember);height:34px;cursor:pointer}
 .silentNote{font-family:'Chivo Mono',monospace;font-size:.8rem;color:var(--muted);margin-top:10px;line-height:1.5}
 #sClose{background:var(--ember);border-color:var(--ember);color:var(--on-accent)}
-.zonesHint{font-family:'Chivo Mono',monospace;font-size:.72rem;color:var(--muted);margin:0 0 18px;line-height:1.5}
-.zoneRow{display:flex;align-items:center;gap:8px;margin-bottom:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
-.zSw{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.6);cursor:pointer;flex:0 0 auto;box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.zName{flex:1;min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--text);font-family:'Big Shoulders Display',sans-serif;font-weight:700;font-size:1.05rem;padding:9px 10px;outline:none}
-.zName:focus{border-color:var(--amber)}
-.zSound{background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--text);font-family:'Chivo Mono',monospace;font-size:.8rem;padding:8px 6px;cursor:pointer;flex:0 0 auto;max-width:10ch}
-.zPlay{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ember);font-size:.9rem;cursor:pointer;flex:0 0 auto}
-.zPlay:active{background:var(--panel-2)}
-.zDel{background:none;border:none;color:var(--red);font-size:1.05rem;cursor:pointer;padding:6px;flex:0 0 auto}
-#zClose{background:var(--ember);border-color:var(--ember);color:var(--on-accent)}
-.zdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
 .toneRow{flex-wrap:wrap}
-#mZones button{flex:0 1 auto}
-.tile .zoneChip{align-self:center;margin-top:.6cqh;max-width:86%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  font-family:'Chivo Mono',monospace;font-weight:600;font-size:2.6cqh;letter-spacing:.04em;text-transform:uppercase;
-  color:#fff;padding:.5cqh 2cqw;border-radius:999px;line-height:1.1}
+#mTones button{flex:0 1 auto}
 
 /* ---------- Multi-step tiles: distinct look + prominent phase banner ---------- */
 /* stepped tiles wear a persistent ember frame so they never read as a plain timer */
@@ -499,7 +494,6 @@ body.editing .dupBtn{display:none}
   <div class="clock" id="clock"></div>
   <div class="spacer"></div>
   <button class="hbtn" id="settingsBtn" title="Settings / Réglages">⚙</button>
-  <button class="hbtn" id="zonesBtn" title="Zones">Zones</button>
   <button class="hbtn" id="editBtn">✎ Edit</button>
   <button class="hbtn primary" id="newBtn">+ New</button>
 </header>
@@ -548,8 +542,8 @@ body.editing .dupBtn{display:none}
       <button type="button" id="mAddStep" class="addStep" data-i18n="addStep">+ Add step</button>
     </div>
     <div class="field">
-      <label data-i18n="zoneLabel">Zone (donne la sonnerie)</label>
-      <div class="toneRow" id="mZones"></div>
+      <label data-i18n="ringtoneLabel">Sonnerie (appuyez pour écouter)</label>
+      <div class="toneRow" id="mTones"></div>
     </div>
     <div class="field">
       <label data-i18n="voiceLabel">Voice announcement</label>
@@ -559,18 +553,6 @@ body.editing .dupBtn{display:none}
       <button id="mDelete">🗑</button>
       <button id="mCancel" data-i18n="cancel">Cancel</button>
       <button id="mSave" data-i18n="save">Save</button>
-    </div>
-  </div>
-</div>
-
-<div id="zonesOverlay">
-  <div id="zonesModal">
-    <h2 data-i18n="zonesTitle">Zones</h2>
-    <p class="zonesHint" data-i18n="zonesHint">Chaque zone a sa propre sonnerie. Un timer choisit sa zone.</p>
-    <div id="zonesList"></div>
-    <button type="button" id="zAdd" class="addStep" data-i18n="addZone">＋ Ajouter une zone</button>
-    <div class="modalBtns">
-      <button id="zClose" data-i18n="close">Fermer</button>
     </div>
   </div>
 </div>
@@ -615,7 +597,7 @@ window.CADENCE_LOG=FAIL_LOG;
 // name (sezam-*). The product is independent (Cadence), so storage moved to
 // cadence-* — each old value is copied to its new key once (never overwriting
 // fresher data), then the old key is removed. Existing tablets keep their
-// full config: timers, zones, running state, batches, language, volume.
+// full config: timers (sonnerie comprise), running state, batches, language, volume.
 (function migrateStorage(){
   const MAP={
     'sezam-timers-v1':'cadence-timers-v1',
@@ -640,35 +622,33 @@ window.CADENCE_LOG=FAIL_LOG;
 })();
 
 /* ================= Data ================= */
-const LS_DEF='cadence-timers-v1', LS_RUN='cadence-run-v1', LS_ZONES='cadence-zones-v1', LS_CLONES='cadence-clones-v1';
-const TONES=['Bell','Beep','Chime','Ping','Buzz','Marimba'];   // available ringtones (assigned per ZONE)
-const ZONE_COLORS=['#e8600f','#3d7f8c','#dd9207','#0fa96a','#2f6f9e','#b0483a'];
-const PRESETS=[[0,30],[1,0],[2,0],[3,0],[5,0],[8,0],[10,0],[15,0]];
+const LS_DEF='cadence-timers-v1', LS_RUN='cadence-run-v1', LS_CLONES='cadence-clones-v1';
+// Legacy (pre-v0.4.11): read once by migrateZoneSounds, then dropped.
+const LS_ZONES='cadence-zones-v1', LS_ZONE_MIG='cadence-zone-sound-v1';
+const TONES=['Bell','Beep','Chime','Ping','Buzz','Marimba'];   // the ringtone belongs to the TIMER
+const DEFAULT_TONE='Bell';   // also the pre-v0.4.11 fallback -> what the kitchen actually HEARD
+// Six raccourcis, pas huit : au-dela la rangee passe sur deux lignes. Le mot
+// " min" coutait a lui seul la place d'une pastille -> nombres nus, l'unite
+// est deja portee par les colonnes min/sec juste au-dessus.
+const PRESETS=[[0,30],[1,0],[3,0],[5,0],[10,0],[15,0]];
 // Default timer set. Seeds a FRESH device in full; on an existing install a
-// SEED_VERSION bump only TOPS UP what's missing (new default timers/zones —
+// SEED_VERSION bump only TOPS UP what's missing (new default timers —
 // see Boot). It NEVER replaces or removes anything the user configured.
-const SEED_VERSION='4';   // bump → one-shot non-destructive top-up on existing installs
-// The pilot kitchen's real timers, in service order, each pre-assigned to its zone.
+const SEED_VERSION='5';   // bump → one-shot non-destructive top-up on existing installs
+// The pilot kitchen's real timers, in service order, each with its own ringtone.
 // Ships in ENGLISH (default language + English call-outs). Switching to FR = user rewrites phrases.
 const DEFAULTS=[
-  {name:'Manouche',         durationSec:45,  zoneId:'four',      phrase:'The manouche is ready'},
-  {name:'Mozzarella sticks',durationSec:135, zoneId:'fritteuse', phrase:'The mozzarella sticks are ready'},
-  {name:'Fries',            durationSec:260, zoneId:'fritteuse', phrase:'The fries are ready'},
-  {name:'Crispy',           durationSec:375, zoneId:'fritteuse', phrase:'The crispy is ready'},
-  {name:'Melt cheese',      durationSec:210, zoneId:'four',      phrase:'The melt cheese is ready'},
-  {name:'Dough',            durationSec:720, zoneId:'four',      phrase:'The dough is ready'},
-  {name:'Cook chicken',     zoneId:'four',   phrase:'The chicken is ready',
+  {name:'Manouche',         durationSec:45,  sound:'Chime', phrase:'The manouche is ready'},
+  {name:'Mozzarella sticks',durationSec:135, sound:'Beep',  phrase:'The mozzarella sticks are ready'},
+  {name:'Fries',            durationSec:260, sound:'Beep',  phrase:'The fries are ready'},
+  {name:'Crispy',           durationSec:375, sound:'Beep',  phrase:'The crispy is ready'},
+  {name:'Melt cheese',      durationSec:210, sound:'Chime', phrase:'The melt cheese is ready'},
+  {name:'Dough',            durationSec:720, sound:'Chime', phrase:'The dough is ready'},
+  {name:'Cook chicken',     sound:'Chime',   phrase:'The chicken is ready',
     steps:[{name:'Cook',sec:360},{name:'Flip',sec:90},{name:'Cook',sec:360}]},   // 6:00 + 1:30 + 6:00 = 13:30
 ];
-// Kitchen zones — STABLE ids so the DEFAULTS above can reference them. Colours match
-// Serge's setup; sounds are sensible defaults (adjustable in the Zones manager).
-const ZONE_SEED=[
-  {id:'chaud',     name:'Chaud',     sound:'Bell',  color:'#e8600f'},
-  {id:'four',      name:'Four',      sound:'Chime', color:'#dd9207'},
-  {id:'fritteuse', name:'Fritteuse', sound:'Beep',  color:'#0fa96a'},
-];
-let timers=[];            // [{id,name,durationSec,zoneId,phrase}] or [{...,steps:[{name,sec}]}] (legacy: tone)
-let zones=[];             // [{id,name,sound,color}] — the alarm SOUND belongs to the zone, not the timer
+let timers=[];            // [{id,name,durationSec,sound,phrase}] or [{...,steps:[{name,sec}]}]
+                          // (legacy: zoneId/tone, read once by the migration then dropped)
 let run={};               // {id:{status:'running'|'ringing', endsAt, nextVoiceAt, voiceGap}}
 let clones=[];            // [{id,parentId}] — ×2 batch duplicates: ephemeral, never idle (dissolve on stop)
 let view=[];              // display list built at render(): each parent followed by its clone batches
@@ -689,9 +669,7 @@ const I18N={
     ringtoneLabel:'Sonnerie (appuyez pour écouter)', voiceLabel:'Annonce vocale', voicePh:'Les frites sont prêtes',
     cancel:'Annuler', save:'Enregistrer',
     stepsWord:'étapes',
-    zonesTitle:'Zones', zonesHint:'Chaque zone a sa propre sonnerie. Un timer choisit juste sa zone.',
-    addZone:'＋ Ajouter une zone', close:'Fermer', zoneLabel:'Zone (donne la sonnerie)',
-    noZone:'Aucune', soundWord:'Sonnerie',
+    close:'Fermer',
     settingsTitle:'Réglages', languageLabel:'Langue', volumeLabel:'Volume',
     silentNote:'Assurez-vous que votre appareil n\'est pas en mode silencieux.',
   },
@@ -706,9 +684,7 @@ const I18N={
     ringtoneLabel:'Ringtone (tap to preview)', voiceLabel:'Voice announcement', voicePh:'The fries are ready',
     cancel:'Cancel', save:'Save',
     stepsWord:'steps',
-    zonesTitle:'Zones', zonesHint:'Each zone has its own ringtone. A timer just picks its zone.',
-    addZone:'＋ Add zone', close:'Close', zoneLabel:'Zone (sets the ringtone)',
-    noZone:'None', soundWord:'Ringtone',
+    close:'Close',
     settingsTitle:'Settings', languageLabel:'Language', volumeLabel:'Volume',
     silentNote:'Make sure your device is not in silent mode.',
   },
@@ -719,8 +695,7 @@ const readyPhrase=name=> lang==='fr' ? `${name} est prêt` : `The ${name.toLower
 
 function load(){
   try{timers=JSON.parse(localStorage.getItem(LS_DEF))||[]}catch(e){timers=[];logFail('load-timers',e)}
-  try{zones=JSON.parse(localStorage.getItem(LS_ZONES))||[]}catch(e){zones=[];logFail('load-zones',e)}
-  try{run=JSON.parse(localStorage.getItem(LS_RUN))||{}}catch(e){run={};logFail('load-run',e)}
+    try{run=JSON.parse(localStorage.getItem(LS_RUN))||{}}catch(e){run={};logFail('load-run',e)}
   try{clones=JSON.parse(localStorage.getItem(LS_CLONES))||[]}catch(e){clones=[];logFail('load-clones',e)}
   // reconcile stale entries: a clone needs a live parent AND an active run
   // (a batch clone never exists idle); run ids must match a def or a clone.
@@ -731,13 +706,39 @@ function load(){
 }
 function saveDefs(){localStorage.setItem(LS_DEF,JSON.stringify(timers))}
 function saveRun(){localStorage.setItem(LS_RUN,JSON.stringify(run))}
-function saveZones(){localStorage.setItem(LS_ZONES,JSON.stringify(zones))}
 function saveClones(){localStorage.setItem(LS_CLONES,JSON.stringify(clones))}
 const uid=()=>Math.random().toString(36).slice(2,10);
-// The alarm SOUND is resolved from the timer's ZONE. Legacy timers (with a `tone`
-// and no zone) keep their old sound as a fallback, so nothing changes for them.
-const zoneById=id=>zones.find(z=>z.id===id)||null;
-const soundFor=t=>{ const z=zoneById(t.zoneId); return (z&&z.sound) || t.tone || 'Bell'; };
+// La sonnerie est une propriete du timer. Les anciens timers (`tone`, ou une zone
+// deja migree) gardent leur son : le repli ne change rien pour eux.
+const soundFor=t=>t.sound||t.tone||DEFAULT_TONE;
+
+/* v0.4.11 — les zones disparaissent, le son appartient au timer.
+   Chaque timer herite UNE FOIS de la sonnerie de sa zone. Un timer sans zone
+   recupere Bell : l'ancien repli, donc ce que la cuisine ENTENDAIT reellement,
+   pas ce qu'on choisirait aujourd'hui.
+   Ordre delibere (timers sauves -> drapeau -> ancienne cle supprimee) : une
+   interruption au milieu ne doit perdre aucun son.
+   Zones presentes mais ILLISIBLES -> on ne fait rien ET on ne pose pas le
+   drapeau : "present mais illisible" n'est pas "absent", ca doit rejouer au
+   prochain demarrage. */
+function migrateZoneSounds(){
+  if(localStorage.getItem(LS_ZONE_MIG)==='1') return 0;
+  const raw=localStorage.getItem(LS_ZONES);
+  let list=[];
+  if(raw!==null){
+    try{ list=JSON.parse(raw)||[] }catch(e){ logFail('migrate-zone-sound',e); return 0; }
+  }
+  const tone={}; list.forEach(z=>{ if(z&&z.id&&z.sound) tone[z.id]=z.sound; });
+  let n=0;
+  timers.forEach(t=>{
+    if(!t.sound){ t.sound=tone[t.zoneId]||t.tone||DEFAULT_TONE; n++; }
+    delete t.zoneId; delete t.tone;
+  });
+  saveDefs();
+  localStorage.setItem(LS_ZONE_MIG,'1');
+  localStorage.removeItem(LS_ZONES);
+  return n;
+}
 
 /* ================= Audio ================= */
 let AC=null, speechReady=false;
@@ -887,10 +888,17 @@ function startTimer(t){
    whole definition, and DISSOLVE (instead of going idle) when stopped/reset. */
 const MAX_BATCH=3;   // per dish: 1 original + up to 2 clone batches (keeps the grid readable)
 const batchCount=pid=>1+clones.reduce((a,c)=>a+(c.parentId===pid?1:0),0);
+/* Le numero de lot est PORTE par le clone, il n'est plus deduit du compte.
+   Sinon : 3 lots, on arrete le #2, le compte retombe a 2 et la tuile survivante
+   s'appellerait #3 pendant que son bouton proposerait #3 aussi. Bug trouve dans
+   l'app Flutter le 28/07 en passant de x a #. */
+const batchNosOf=pid=>new Set([1,...clones.filter(c=>c.parentId===pid).map(c=>c.no)]);
+function nextBatchNo(pid){ const used=batchNosOf(pid); let n=2; while(used.has(n))n++; return n; }
+const batchNoFor=id=>{ const c=clones.find(x=>x.id===id); return c?c.no:1; };
 function spawnClone(pid){
   const parent=timers.find(x=>x.id===pid); if(!parent)return;
   if(batchCount(pid)>=MAX_BATCH)return;
-  const c={id:uid(),parentId:pid};
+  const c={id:uid(),parentId:pid,no:nextBatchNo(pid)};
   clones.push(c); saveClones();
   startTimer({...parent,id:c.id});           // fresh batch → full duration, running now
   animTile(c.id,'spawnIn');                  // the new tile eases in (overrides justOn's part-anims)
@@ -1033,23 +1041,24 @@ function render(){
     if(t.parentId) el.classList.add('cloneTile');   // batch clone: not editable/draggable
     el.innerHTML=`<div class="phaseBanner"><span class="pc"></span><span class="pn"></span></div><div class="inner">
       <div class="editBadge">✎ EDIT</div>
-      <div class="topg"><div class="nameRow"><div class="name"></div><button type="button" class="dupBtn">×2</button></div><div class="zoneChip" hidden></div></div>
+      <div class="topg"><div class="nameRow"><div class="name"></div><button type="button" class="dupBtn">#2</button></div></div>
       <div class="timeWrap"><div class="tghost" aria-hidden="true"></div><div class="time"></div></div>
       <div class="tctl">
-        <button data-a="plus">+10s</button>
-        <button data-a="minus">−10s</button>
+        <button data-a="plus"><span class="sg">+</span><span class="dg">10</span></button>
+        <button data-a="minus"><span class="sg">−</span><span class="dg">10</span></button>
         <button data-a="stop" class="stop">✕</button>
       </div>
     </div>`;
-    el.querySelector('.name').textContent=t.name;
+    // Deux barquettes de frites ne se distinguaient que par leur bouton de
+    // duplication : le numero de lot passe dans le nom, dans la meme encre.
+    const bn=t.parentId?batchNoFor(t.id):1;
+    el.querySelector('.name').textContent=bn>=2?`${t.name} #${bn}`:t.name;
     // Static per-render bits + cached refs: the 150ms tick then only touches
     // what actually changes (time, pie, phase) instead of re-querying/rewriting.
     el._t=t;
     el._r={time:el.querySelector('.time'), ghost:el.querySelector('.tghost'),
            pc:el.querySelector('.pc'), pn:el.querySelector('.pn'),
            dup:el.querySelector('.dupBtn')};
-    const zc=el.querySelector('.zoneChip'), z=zoneById(t.zoneId);
-    if(z){ zc.textContent=z.name; zc.style.background=z.color; zc.hidden=false; }
     grid.appendChild(el);
   }
   // Apply state attrs BEFORE layout(): layout's getComputedStyle flushes styles,
@@ -1109,12 +1118,12 @@ function updateTiles(){
     }
     if(el.dataset.status!==status) el.dataset.status=status;
     if(el.dataset.chain!==chainAttr) el.dataset.chain=chainAttr;
-    // ×N batch button: on any ACTIVE tile of a dish that still has batch room.
-    // Label = the batch the press would create (×2 → ×3); frozen while fading out.
+    // #N batch button: on any ACTIVE tile of a dish that still has batch room.
+    // Label = the batch number the press would CREATE, i.e. the first free one.
     const pid=t.parentId||t.id, cnt=batchCount(pid);
     const showDup = status!=='idle' && cnt<MAX_BATCH;
     if(R.dup._show!==showDup){ R.dup._show=showDup; R.dup.classList.toggle('show',showDup); }
-    if(showDup) put(R.dup,'×'+(cnt+1));
+    if(showDup) put(R.dup,'#'+nextBatchNo(pid));
     put(R.ghost,R.time._v.replace(/[0-9]/g,'8'));
   }
 }
@@ -1208,7 +1217,6 @@ grid.addEventListener('pointercancel',()=>{
 
 /* ================= Edit mode ================= */
 const editBtn=document.getElementById('editBtn');
-const zonesBtn=document.getElementById('zonesBtn');
 const newBtn=document.getElementById('newBtn');   // used in applyStatic — declare it, don't lean on the implicit id→window global
 /* Render a header button as an icon span + word span, so the word can be
    collapsed responsively (CSS hides .lbl) while the icon always stays. */
@@ -1232,29 +1240,25 @@ editBtn.addEventListener('click',()=>{
 const overlay=document.getElementById('overlay');
 const mName=document.getElementById('mName'),mMin=document.getElementById('mMin'),mSec=document.getElementById('mSec'),
       mPhrase=document.getElementById('mPhrase'),mTitle=document.getElementById('mTitle'),
-      mZones=document.getElementById('mZones'),mPresets=document.getElementById('mPresets'),
+      mTones=document.getElementById('mTones'),mPresets=document.getElementById('mPresets'),
       mDelete=document.getElementById('mDelete');
-let mZoneId=null;
+let mTone=DEFAULT_TONE;
 
-// The timer's modal picks a ZONE (which carries the sound), not a tone.
-function buildZoneChips(){
-  mZones.innerHTML='';
-  const none=document.createElement('button'); none.type='button'; none.dataset.zone='';
-  none.textContent=tr('noZone');
-  none.addEventListener('click',()=>{ mZoneId=null; syncZones(); });
-  mZones.appendChild(none);
-  zones.forEach(z=>{
-    const b=document.createElement('button'); b.type='button'; b.dataset.zone=z.id;
-    const dot=document.createElement('span'); dot.className='zdot'; dot.style.background=z.color;
-    b.appendChild(dot); b.appendChild(document.createTextNode(z.name));
-    b.addEventListener('click',()=>{ mZoneId=z.id; syncZones(); playRingtone(z.sound); });
-    mZones.appendChild(b);
+// La sonnerie se choisit ICI, sur le timer : un appui SELECTIONNE ET JOUE.
+// C'est le premier endroit ou tout le monde l'a cherchee.
+function buildToneChips(){
+  mTones.innerHTML='';
+  TONES.forEach(s=>{
+    const b=document.createElement('button'); b.type='button'; b.dataset.tone=s;
+    b.textContent=TONE_LABELS[lang][s];
+    b.addEventListener('click',()=>{ mTone=s; syncTones(); playRingtone(s); });
+    mTones.appendChild(b);
   });
-  syncZones();
+  syncTones();
 }
-function syncZones(){ [...mZones.children].forEach(b=>b.classList.toggle('sel',(b.dataset.zone||null)===(mZoneId||null))); }
+function syncTones(){ [...mTones.children].forEach(b=>b.classList.toggle('sel',b.dataset.tone===mTone)); }
 PRESETS.forEach(([m,s])=>{
-  const b=document.createElement('button');b.textContent=s?`${m}:${String(s).padStart(2,'0')}`:`${m} min`;
+  const b=document.createElement('button');b.textContent=s?`${m}:${String(s).padStart(2,'0')}`:`${m}`;
   b.addEventListener('click',()=>{mMin.textContent=m;mSec.textContent=String(s).padStart(2,'0');syncPresets()});
   mPresets.appendChild(b);
 });
@@ -1320,7 +1324,7 @@ function openModal(t){
   editingId=t?t.id:null;
   mTitle.textContent=t?tr('editTimer'):tr('newTimer');
   mName.value=t?t.name:'';
-  mZoneId = t ? (t.zoneId ?? null) : null;
+  mTone = (t && t.sound) || DEFAULT_TONE;
   mPhrase.value=(t&&t.phrase)||'';   // very old timers may lack phrase — never show "undefined"
   mDelete.style.display=t?'':'none';
   if(t && isChain(t)){
@@ -1333,7 +1337,7 @@ function openModal(t){
     mStepList=[];
     setMode('single');
   }
-  buildZoneChips();syncPresets();
+  buildToneChips();syncPresets();
   overlay.classList.add('open');
   if(!t)setTimeout(()=>mName.focus(),100);
 }
@@ -1347,10 +1351,10 @@ document.getElementById('mSave').addEventListener('click',()=>{
   let patch;
   if(mMode==='chain'){
     const steps=mStepList.map(s=>({name:(s.name||'Step').trim()||'Step',sec:Math.max(5,s.sec||5)}));
-    patch={name,steps,durationSec:steps.reduce((a,s)=>a+s.sec,0),zoneId:mZoneId,phrase};
+    patch={name,steps,durationSec:steps.reduce((a,s)=>a+s.sec,0),sound:mTone,phrase};
   }else{
     const dur=Math.max(5,(+mMin.textContent)*60+(+mSec.textContent));
-    patch={name,durationSec:dur,zoneId:mZoneId,phrase};
+    patch={name,durationSec:dur,sound:mTone,phrase};
   }
   if(editingId){
     const t=timers.find(x=>x.id===editingId);
@@ -1358,7 +1362,7 @@ document.getElementById('mSave').addEventListener('click',()=>{
     delete run[t.id];                      // reset any run state so it matches the new shape
     stopSpeechFor(t.id);                   // if it was ringing, a queued announcement must not speak after the reset
     removeClonesOf(t.id);                  // batches are tied to the def they were cloned from
-    Object.assign(t,patch); delete t.tone; // zones now govern the sound; drop legacy tone
+    Object.assign(t,patch); delete t.tone; delete t.zoneId; // le son vit sur le timer
   }else{
     timers.push({id:uid(),...patch});
   }
@@ -1371,41 +1375,6 @@ mDelete.addEventListener('click',()=>{
   timers=timers.filter(t=>t.id!==editingId);
   delete run[editingId];
   saveDefs();saveRun();playClick(false);closeModal();render();
-});
-
-/* ================= Zones manager ================= */
-const zonesOverlay=document.getElementById('zonesOverlay');
-const zonesList=document.getElementById('zonesList');
-function openZones(){ renderZones(); zonesOverlay.classList.add('open'); }
-function closeZones(){ zonesOverlay.classList.remove('open'); }
-function renderZones(){
-  zonesList.innerHTML='';
-  zones.forEach((z,i)=>{
-    const row=document.createElement('div'); row.className='zoneRow';
-    const sw=document.createElement('button'); sw.type='button'; sw.className='zSw'; sw.style.background=z.color; sw.title='Couleur';
-    sw.addEventListener('click',()=>{ z.color=ZONE_COLORS[(ZONE_COLORS.indexOf(z.color)+1)%ZONE_COLORS.length]; sw.style.background=z.color; saveZones(); render(); });
-    const nm=document.createElement('input'); nm.className='zName'; nm.maxLength=18; nm.value=z.name;
-    nm.addEventListener('input',()=>{ z.name=nm.value; saveZones(); render(); });
-    const sel=document.createElement('select'); sel.className='zSound'; sel.title='Sonnerie';
-    TONES.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=TONE_LABELS[lang][s]; if(s===z.sound)o.selected=true; sel.appendChild(o); });
-    sel.addEventListener('change',()=>{ z.sound=sel.value; saveZones(); playRingtone(z.sound); });
-    const pv=document.createElement('button'); pv.type='button'; pv.className='zPlay'; pv.textContent='▶'; pv.title='Écouter';
-    pv.addEventListener('click',()=>playRingtone(z.sound));
-    const del=document.createElement('button'); del.type='button'; del.className='zDel'; del.textContent='✕'; del.title='Supprimer';
-    del.addEventListener('click',()=>{
-      timers.forEach(t=>{ if(t.zoneId===z.id) t.zoneId=null; });   // un-assign, keeps timers intact
-      zones.splice(i,1); saveZones(); saveDefs(); renderZones(); render();
-    });
-    row.append(sw,nm,sel,pv,del);
-    zonesList.appendChild(row);
-  });
-}
-zonesBtn.addEventListener('click',()=>{ openZones(); playClick(true); });
-document.getElementById('zClose').addEventListener('click',closeZones);
-zonesOverlay.addEventListener('click',e=>{ if(e.target===zonesOverlay) closeZones(); });
-document.getElementById('zAdd').addEventListener('click',()=>{
-  zones.push({id:uid(), name: lang==='fr'?'Nouvelle zone':'New zone', sound:TONES[zones.length%TONES.length], color:ZONE_COLORS[zones.length%ZONE_COLORS.length]});
-  saveZones(); renderZones(); render(); playClick(true);
 });
 
 /* ================= Wake lock & clock ================= */
@@ -1435,9 +1404,8 @@ function applyStatic(){
   setBtn(editBtn, editing?tr('done'):tr('edit'));
   setBtn(newBtn, tr('new'));
   [...mModeRow.children].forEach(b=>{ b.textContent = b.dataset.mode==='single'?tr('single'):tr('multi'); });
-  zonesBtn.textContent = tr('zonesTitle');
   syncLang();
-  buildZoneChips();   // refresh the "None" label + chips on language change
+  buildToneChips();   // refresh the ringtone labels on language change
 }
 [...langRow.children].forEach(b=>b.addEventListener('click',()=>{
   if(b.dataset.lang===lang) return;
@@ -1456,28 +1424,29 @@ settingsOverlay.addEventListener('click',e=>{ if(e.target===settingsOverlay) set
 load();
 // Seed. FRESH device (nothing stored) → full default set. Existing install
 // with a NEW SEED_VERSION → non-destructive top-up ONLY: add missing default
-// zones (matched by stable id) and missing default timers (matched by name).
+// timers (matched by name).
 // It NEVER touches existing timers, running state, batches or the chosen
 // language — a version bump must not erase user configuration
 // (rule adopted 2026-07-23 from the v2 review; spec-flutter-v1 §8).
 // Real cross-device sync will come with the database later.
 if(localStorage.getItem(LS_DEF)===null){
   timers=DEFAULTS.map(d=>({id:uid(),...d}));
-  zones=ZONE_SEED.map(z=>({...z}));                     // stable-id zones, matched by the timers above
   run={}; clones=[]; saveClones();
+  localStorage.setItem(LS_ZONE_MIG,'1');   // installation neuve : rien a migrer
   lang='en'; localStorage.setItem('cadence-lang','en'); // hardcoded default set ships in English
   if('speechSynthesis' in window) pickVoice();          // re-pick an English voice for the call-outs
   localStorage.setItem('cadence-seed-ver',SEED_VERSION);
-  saveDefs(); saveZones(); saveRun();
+  saveDefs(); saveRun();
 }else if(localStorage.getItem('cadence-seed-ver')!==SEED_VERSION){
-  ZONE_SEED.forEach(z=>{ if(!zones.some(x=>x.id===z.id)) zones.push({...z}); });
   const seededNames=new Set(timers.map(t=>t.name));
   DEFAULTS.forEach(d=>{ if(!seededNames.has(d.name)) timers.push({id:uid(),...d}); });
   localStorage.setItem('cadence-seed-ver',SEED_VERSION);
-  saveDefs(); saveZones();
+  saveDefs();
 }
-// Fallback: make sure zones exist even if nothing was seeded this load.
-if(!localStorage.getItem(LS_ZONES)){ zones=ZONE_SEED.map(z=>({...z})); saveZones(); }
+// Une seule fois : les zones disparaissent, chaque timer reprend leur sonnerie.
+const migrated=migrateZoneSounds();
+if(migrated) console.info('[cadence] '+migrated+' timers ont repris la sonnerie '+
+  'de leur ancienne zone (les zones sont supprimees ; le son appartient au timer)');
 // One-time, NON-destructive: surface the chained "Steak" demo on existing installs
 // (which kept their own timers above) so the multi-step feature is visible without
 // wiping anything. Skips if a chained timer already exists.
@@ -1491,7 +1460,9 @@ if(!localStorage.getItem('cadence-steak-demo-v2')){
          steps:[{name:'Saisir',sec:120},{name:'Retourner',sec:120},{name:'Repos',sec:300}]}
       : {name:'Steak · med-rare', phrase:'The steak is ready to plate',
          steps:[{name:'Sear',sec:120},{name:'Flip',sec:120},{name:'Rest',sec:300}]};
-    timers.unshift({id:uid(),tone:'Bell',...demo});
+    // `sound` et non plus `tone` : la demo est ajoutee APRES la migration, donc
+    // personne ne repasserait derriere pour lui en donner une.
+    timers.unshift({id:uid(),sound:'Bell',...demo});
   }
   saveDefs();
   localStorage.setItem('cadence-steak-demo-v2','1');
