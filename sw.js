@@ -1,4 +1,4 @@
-/* Minimal offline-first service worker for the Cadence kitchen timer.
+/* Minimal offline-first service worker for the CookOnTime kitchen timer.
    Caches the app shell so it keeps working if the kitchen wifi drops.
    Bump CACHE when shipping changes so clients pull the new version.
    (Renamed from the sezam-timers-* prefix on v25 — activate() deletes

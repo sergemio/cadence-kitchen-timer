@@ -1,6 +1,6 @@
 {
-  "name": "Cadence — Kitchen Timer",
-  "short_name": "Cadence",
+  "name": "CookOnTime — Kitchen Timer",
+  "short_name": "CookOnTime",
   "description": "Minuteurs de cuisine pour les pros — lancez d'un tap, l'app annonce à voix haute quand c'est prêt.",
   "start_url": "./",
   "scope": "./",
