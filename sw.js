@@ -3,7 +3,7 @@
    Bump CACHE when shipping changes so clients pull the new version.
    (Renamed from the sezam-timers-* prefix on v25 — activate() deletes
    every cache that isn't the current one, so old caches self-clean.) */
-const CACHE = 'cadence-timers-v27';
+const CACHE = 'cadence-timers-v28';
 const SHELL = [
   './',
   './index.html',
